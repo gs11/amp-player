@@ -1,0 +1,37 @@
+service: amp-player-api
+
+frameworkVersion: "3"
+
+provider:
+  name: aws
+  runtime: python3.9 # Latest supported
+  stage: ${opt:stage}
+  region: eu-north-1
+  versionFunctions: false
+
+plugins:
+  - serverless-offline
+  - serverless-python-requirements
+
+custom:
+  pythonRequirements:
+    usePoetry: true
+    requirePoetryLockFile: true
+
+package:
+  patterns:
+    - "!Makefile"
+    - "!node_modules/**"
+    - "!package*.json"
+    - "!poetry.lock"
+    - "!pyproject.toml"
+    - "!src/__pycache__/**"
+    - "!requirements.txt"
+
+functions:
+  handler:
+    handler: src.main.handler
+    events:
+      - http:
+          path: /{proxy+}
+          method: ANY
