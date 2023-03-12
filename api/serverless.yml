@@ -31,6 +31,7 @@ package:
 functions:
   handler:
     handler: src.main.handler
+    url: true
     events:
       - http:
           path: /{proxy+}
