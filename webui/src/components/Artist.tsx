@@ -108,7 +108,7 @@ export function Artist(props: any) {
     }
   };
 
-  console.log(selectedModuleProgress);
+  //console.log(selectedModuleProgress);
 
   return (
     <>

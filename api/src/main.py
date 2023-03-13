@@ -2,21 +2,12 @@ from typing import List
 import http
 
 from fastapi import FastAPI, Response, HTTPException
-from fastapi.middleware.cors import CORSMiddleware
 from mangum import Mangum
 
 from . import amp
 from .models import Artist, Module
 
 app = FastAPI()
-
-cors_app = CORSMiddleware(
-    app=app,
-    allow_origins=["http://localhost:3000"],
-    allow_credentials=False,
-    allow_methods=["*"],
-    allow_headers=["*"],
-)
 
 
 @app.get("/api/artists", response_model=List[Artist], response_model_exclude_none=True)
@@ -40,4 +31,4 @@ def get_module(module_id: int):
     )
 
 
-handler = Mangum(cors_app)
+handler = Mangum(app)
