@@ -1,6 +1,8 @@
-services: 
+services:
   api:
     path: api
   webui:
     path: webui
- 
+    params:
+      apiOriginName: amp-player-api
+      apiLambdaFunctionUrl: ${api.HandlerLambdaFunctionUrl}

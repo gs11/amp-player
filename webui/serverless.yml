@@ -89,7 +89,7 @@ resources:
           PriceClass: PriceClass_100
           Origins:
             - Id: ${self:service}-${self:provider.stage}
-              DomainName: ${self:service}-${self:provider.stage}.s3-${self:provider.region}.amazonaws.com
+              DomainName: !GetAtt StaticSite.DomainName
               S3OriginConfig:
                 OriginAccessIdentity:
                   !Join [
@@ -99,8 +99,8 @@ resources:
                       !Ref CloudFrontOriginAccessIdentity,
                     ],
                   ]
-            - Id: amp-player-api-${self:provider.stage} # TODO: From parameter
-              DomainName: pv6iy6ap5ihki44px67gq372fy0ehaey.lambda-url.eu-north-1.on.aws # TODO: From parameter
+            - Id: ${param:apiOriginName}-${self:provider.stage}
+              DomainName: !Select [2, !Split ["/", "${param:apiLambdaFunctionUrl}"]] # Removes https:// and trailing /
               CustomOriginConfig:
                 HTTPSPort: 443
                 OriginProtocolPolicy: https-only
