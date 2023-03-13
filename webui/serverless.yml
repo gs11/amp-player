@@ -13,9 +13,6 @@ plugins:
   - serverless-s3-sync
 
 custom:
-  hostname:
-    dev: amp-player-dev.gsgs.se
-    prod: amp-player.gsgs.se
   s3Sync:
     - bucketName: ${self:service}-${self:provider.stage}
       localDir: build
@@ -42,11 +39,11 @@ resources:
         Bucket: !Ref StaticSite
         PolicyDocument:
           Statement:
-          - Action: "s3:Get*"
-            Effect: Allow
-            Resource: "arn:aws:s3:::${self:service}-${self:provider.stage}/*"
-            Principal:
-              CanonicalUser: !GetAtt CloudFrontOriginAccessIdentity.S3CanonicalUserId
+            - Action: "s3:Get*"
+              Effect: Allow
+              Resource: "arn:aws:s3:::${self:service}-${self:provider.stage}/*"
+              Principal:
+                CanonicalUser: !GetAtt CloudFrontOriginAccessIdentity.S3CanonicalUserId
 
     CloudFrontOriginAccessIdentity:
       Type: AWS::CloudFront::CloudFrontOriginAccessIdentity
@@ -54,30 +51,94 @@ resources:
         CloudFrontOriginAccessIdentityConfig:
           Comment: ${self:service}-${self:provider.stage}
 
+    OriginRequestPolicy:
+      Type: AWS::CloudFront::OriginRequestPolicy
+      Properties:
+        OriginRequestPolicyConfig:
+          Name: remove-host-header
+          CookiesConfig:
+            CookieBehavior: all
+          HeadersConfig:
+            HeaderBehavior: allExcept
+            Headers:
+              - Host
+          QueryStringsConfig:
+            QueryStringBehavior: all
+
+    CachePolicy:
+      Type: AWS::CloudFront::CachePolicy
+      Properties:
+        CachePolicyConfig:
+          Name: Default
+          DefaultTTL: 86400 # 24h
+          MaxTTL: 86400 # 24h
+          MinTTL: 86400 # 24h
+          ParametersInCacheKeyAndForwardedToOrigin:
+            CookiesConfig:
+              CookieBehavior: none
+            HeadersConfig:
+              HeaderBehavior: none
+            QueryStringsConfig:
+              QueryStringBehavior: all
+            EnableAcceptEncodingGzip: false
+
     CloudFrontDistribution:
       Type: AWS::CloudFront::Distribution
       Properties:
         DistributionConfig:
+          PriceClass: PriceClass_100
           Origins:
             - Id: ${self:service}-${self:provider.stage}
               DomainName: ${self:service}-${self:provider.stage}.s3-${self:provider.region}.amazonaws.com
               S3OriginConfig:
-                OriginAccessIdentity: !Join ["", ["origin-access-identity/cloudfront/", !Ref CloudFrontOriginAccessIdentity]]
+                OriginAccessIdentity:
+                  !Join [
+                    "",
+                    [
+                      "origin-access-identity/cloudfront/",
+                      !Ref CloudFrontOriginAccessIdentity,
+                    ],
+                  ]
+            - Id: amp-player-api-${self:provider.stage} # TODO: From parameter
+              DomainName: pv6iy6ap5ihki44px67gq372fy0ehaey.lambda-url.eu-north-1.on.aws # TODO: From parameter
+              CustomOriginConfig:
+                HTTPSPort: 443
+                OriginProtocolPolicy: https-only
           Enabled: true
           HttpVersion: http2
           DefaultRootObject: index.html
           CustomErrorResponses:
+            - ErrorCode: 403
+              ResponseCode: 200
+              ResponsePagePath: /index.html
             - ErrorCode: 404
               ResponseCode: 200
               ResponsePagePath: /index.html
           DefaultCacheBehavior:
+            TargetOriginId: ${self:service}-${self:provider.stage}
             AllowedMethods:
               - GET
               - HEAD
-            TargetOriginId: ${self:service}-${self:provider.stage}
             ForwardedValues:
               QueryString: false
               Cookies:
                 Forward: none
             ViewerProtocolPolicy: redirect-to-https
-          PriceClass: PriceClass_100
+          CacheBehaviors:
+            - PathPattern: api/*
+              TargetOriginId: amp-player-api-${self:provider.stage}
+              OriginRequestPolicyId: !Ref OriginRequestPolicy
+              CachePolicyId: !Ref CachePolicy
+              AllowedMethods:
+                - DELETE
+                - GET
+                - HEAD
+                - OPTIONS
+                - PATCH
+                - POST
+                - PUT
+              ForwardedValues:
+                QueryString: true
+                Headers:
+                  - Host
+              ViewerProtocolPolicy: redirect-to-https
