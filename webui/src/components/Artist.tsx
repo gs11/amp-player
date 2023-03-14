@@ -1,6 +1,7 @@
 import {
   Button,
   CircularProgress,
+  Spinner,
   Table,
   TableContainer,
   Tbody,
@@ -12,7 +13,7 @@ import {
 import { useEffect, useState } from "react";
 import { useDebounce } from "use-debounce";
 
-import { API_HOST, ApiState, getArtistModules } from "../api/api";
+import { ApiState, getArtistModules, getModuleBytes } from "../api/api";
 import { Module } from "../types";
 
 declare global {
@@ -35,7 +36,7 @@ const LIBOPENMPT_SUPPORTED_FORMATS = [
 
 export function Artist(props: any) {
   const artistId = props.params.artistId;
-  const [modules, setModules] = useState<Module[] | undefined>();
+  const [modules, setModules] = useState<Module[]>([]);
   const [apiState, setApiState] = useState<ApiState>(ApiState.IDLE);
   const [modPlayer, setModPlayer] = useState<any>();
   const [audioElement, setAudioElement] = useState<any>();
@@ -81,12 +82,13 @@ export function Artist(props: any) {
     }
   };
 
-  const loadPlayPause = (moduleId: number) => {
+  const loadPlayPause = async (moduleId: number) => {
     if (moduleId !== selectedModuleId) {
       if (audioElement) {
         audioElement.pause();
       }
-      let t = new modPlayer.Track(`${API_HOST}/modules/${moduleId}`);
+      const a = await getModuleBytes(moduleId);
+      let t = new modPlayer.Track(a);
       let ae = t.open();
       ae.onended = function () {
         loadPlayPause(getNextModuleId(moduleId));
@@ -108,12 +110,11 @@ export function Artist(props: any) {
     }
   };
 
-  //console.log(selectedModuleProgress);
-
   return (
     <>
-      {apiState === ApiState.LOADING && "Loading..."}
-      {modules && (
+      {apiState === ApiState.LOADING && <Spinner size="xl" thickness="4px" />}
+      {apiState === ApiState.ERROR && "Error when calling API"}
+      {apiState === ApiState.IDLE && modules && (
         <TableContainer>
           <Table variant="simple" size="sm">
             <Thead>

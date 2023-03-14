@@ -1,5 +1,6 @@
 import {
   Input,
+  Spinner,
   Table,
   TableContainer,
   Tbody,
@@ -21,16 +22,17 @@ export function Search() {
   );
   const [, setLocation] = useLocation();
   const [debouncedQuery] = useDebounce<string>(query, 500);
-  const [results, setResults] = useState<Artist[] | undefined>();
+  const [artists, setArtists] = useState<Artist[] | undefined>();
   const [apiState, setApiState] = useState<ApiState>(ApiState.IDLE);
 
   useEffect(() => {
     if (debouncedQuery.length >= 3) {
       setLocation(`/?query=${debouncedQuery}`);
+      setArtists([]);
       setApiState(ApiState.LOADING);
       search(debouncedQuery)
         .then((queryResult) => {
-          setResults(queryResult);
+          setArtists(queryResult);
           setApiState(ApiState.IDLE);
         })
         .catch(() => {
@@ -49,9 +51,11 @@ export function Search() {
           setQuery(e.target.value);
         }}
         className="input input-bordered w-full max-w-xs"
+        mb={4}
       />
-      {apiState === ApiState.LOADING && "Loading..."}
-      {results && (
+      {apiState === ApiState.LOADING && <Spinner size="xl" thickness="4px" />}
+      {apiState === ApiState.ERROR && "Error when calling API"}
+      {apiState === ApiState.IDLE && artists && (
         <TableContainer>
           <Table variant="simple" size="sm">
             <Thead>
@@ -63,7 +67,7 @@ export function Search() {
               </Tr>
             </Thead>
             <Tbody>
-              {results.map((artist: Artist) => (
+              {artists.map((artist: Artist) => (
                 <Tr key={artist.id}>
                   <Td>
                     <Link key={artist.id} href={`/artists/${artist.id}`}>

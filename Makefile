@@ -6,6 +6,10 @@ install_api_dependencies:
 run_api:
 	cd api && serverless offline start --stage local --reloadHandler --httpPort 4000
 
+.PHONY: run_webui
+run_webui:
+	cd webui && npm run start
+
 .PHONY: build_webui
 build_webui:
 	cd webui && npm run build
