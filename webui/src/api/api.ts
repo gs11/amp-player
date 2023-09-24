@@ -1,4 +1,4 @@
-import { Artist, Module } from "../types";
+import { Types } from "../types";
 
 export enum ApiState {
   IDLE,
@@ -24,17 +24,21 @@ const getFromAPI = async (path: string, query?: any): Promise<Response> => {
   }
 };
 
-export const search = async (query: string): Promise<Artist[]> => {
+export const search = async (query: string): Promise<Types.Artist[]> => {
   const response = await getFromAPI("/artists", { query: query });
-  return (await response.json()) as Artist[];
+  return (await response.json()) as Types.Artist[];
 };
 
-export const getArtistModules = async (artistId: number): Promise<Module[]> => {
+export const getArtistModules = async (
+  artistId: number
+): Promise<Types.Module[]> => {
   const response = await getFromAPI(`/artists/${artistId}/modules`);
-  return (await response.json()) as Module[];
+  return (await response.json()) as Types.Module[];
 };
 
-export const getModuleBytes = async (moduleId: number): Promise<ArrayBuffer> => {
+export const getModuleBytes = async (
+  moduleId: number
+): Promise<ArrayBuffer> => {
   const response = await getFromAPI(`/modules/${moduleId}`);
   return response.arrayBuffer();
 };

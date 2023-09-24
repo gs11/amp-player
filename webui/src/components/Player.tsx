@@ -1,15 +1,25 @@
-import { CircularProgress } from "@chakra-ui/react";
 import { useEffect, useState } from "react";
 
+import Button from "react-bootstrap/Button";
+import Nav from "react-bootstrap/Nav";
+import ProgressBar from "react-bootstrap/ProgressBar";
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import {
+  faBackwardStep,
+  faPlay,
+  faPause,
+  faForwardStep,
+} from "@fortawesome/free-solid-svg-icons";
+
 import { API_HOST } from "../api/api";
-import { Module } from "../types";
+import { Types } from "../types";
 declare global {
   interface Window {
     Cowbell: any;
   }
 }
 
-export function Player(props: { module?: Module }) {
+export function Player(props: { module?: Types.Module }) {
   const [audioElement, setAudioElement] = useState<any>();
   const [track, setTrack] = useState<any>();
   const [progress, setProgress] = useState<number>(0);
@@ -18,7 +28,7 @@ export function Player(props: { module?: Module }) {
     pathToLibOpenMPT: "/js/libopenmpt.js",
   });
 
-  const play = async () => {
+  const loadAndPlay = async () => {
     if (props.module) {
       if (audioElement) {
         audioElement.pause();
@@ -38,17 +48,42 @@ export function Player(props: { module?: Module }) {
     }
   };
 
+  const togglePlay = async () => {
+    if (audioElement.paused) {
+      audioElement.play();
+    } else {
+      audioElement.pause();
+    }
+  };
+
+  const blah = (event: any) => {
+    console.log(event.target);
+  };
+
   useEffect(() => {
-    play();
+    loadAndPlay();
   }, [props.module]);
 
   return (
     <>
       {props.module && (
         <>
-          <div>{props.module.composers.join(",")}</div>
-          <div>{props.module.name}</div>
-          <CircularProgress value={progress} />
+          <Nav.Item>
+            <Button variant="link">
+              <FontAwesomeIcon icon={faBackwardStep} color="black" size="lg" />
+            </Button>
+            <Button variant="link" onClick={togglePlay}>
+              <FontAwesomeIcon
+                icon={audioElement && audioElement.paused ? faPlay : faPause}
+                color="black"
+                size="lg"
+              />
+            </Button>
+            <Button variant="link">
+              <FontAwesomeIcon icon={faForwardStep} color="black" size="lg" />
+            </Button>
+            <ProgressBar now={progress} onClick={blah} />
+          </Nav.Item>
         </>
       )}
     </>

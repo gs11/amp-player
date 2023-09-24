@@ -1,91 +1,81 @@
-import {
-  Input,
-  Spinner,
-  Table,
-  TableContainer,
-  Tbody,
-  Td,
-  Th,
-  Thead,
-  Tr,
-} from "@chakra-ui/react";
 import { useEffect, useState } from "react";
-import { useDebounce } from "use-debounce";
-import { Link, useLocation } from "wouter";
 
-import { ApiState, search } from "../api/api";
-import { Artist } from "../types";
+import Button from "react-bootstrap/Button";
+import Spinner from "react-bootstrap/Spinner";
+import Table from "react-bootstrap/Table";
 
-export function Search() {
-  const [query, setQuery] = useState<string>(
-    new URLSearchParams(window.location.search).get("query") || ""
-  );
-  const [, setLocation] = useLocation();
-  const [debouncedQuery] = useDebounce<string>(query, 500);
-  const [artists, setArtists] = useState<Artist[] | undefined>();
+import { ApiState, getArtistModules } from "../api/api";
+import { Types } from "../types";
+
+const LIBOPENMPT_SUPPORTED_FORMATS = [
+  "DBM",
+  "FST",
+  "IT",
+  "MED",
+  "MOD",
+  "OKT",
+  "OSS",
+  "S3M",
+  "STK",
+  "STM",
+  "XM",
+];
+
+export function Search(props: { query?: string }) {
+  const artistId = parseInt(props.artistId || "");
+  const [modules, setModules] = useState<Types.Module[]>([]);
   const [apiState, setApiState] = useState<ApiState>(ApiState.IDLE);
 
   useEffect(() => {
-    if (debouncedQuery.length >= 3) {
-      setLocation(`/?query=${debouncedQuery}`);
-      setArtists([]);
-      setApiState(ApiState.LOADING);
-      search(debouncedQuery)
-        .then((queryResult) => {
-          setArtists(queryResult);
-          setApiState(ApiState.IDLE);
-        })
-        .catch(() => {
-          setApiState(ApiState.ERROR);
-        });
-    }
-  }, [debouncedQuery, setLocation]);
+    setApiState(ApiState.LOADING);
+    getArtistModules(artistId)
+      .then((artistModules) => {
+        setModules(artistModules);
+        setApiState(ApiState.IDLE);
+      })
+      .catch(() => {
+        setApiState(ApiState.ERROR);
+      });
+  }, [artistId]);
 
   return (
     <>
-      <Input
-        size="sm"
-        placeholder="Type here"
-        value={query}
-        onChange={(e) => {
-          setQuery(e.target.value);
-        }}
-        className="input input-bordered w-full max-w-xs"
-        mb={4}
-      />
-      {apiState === ApiState.LOADING && <Spinner size="xl" thickness="4px" />}
+      {apiState === ApiState.LOADING && <Spinner />}
       {apiState === ApiState.ERROR && "Error when calling API"}
-      {apiState === ApiState.IDLE && artists && (
-        <TableContainer>
-          <Table variant="simple" size="sm">
-            <Thead>
-              <Tr>
-                <Th>Handle</Th>
-                <Th>Real name</Th>
-                <Th>Country</Th>
-                <Th>Link</Th>
-              </Tr>
-            </Thead>
-            <Tbody>
-              {artists.map((artist: Artist) => (
-                <Tr key={artist.id}>
-                  <Td>
-                    <Link key={artist.id} href={`/artists/${artist.id}`}>
-                      {artist.handle}
-                    </Link>
-                  </Td>
-                  <Td>{artist.real_name}</Td>
-                  <Td>{artist.country}</Td>
-                  <Td>
-                    <a href={artist.amp_url} target="_blank" rel="noreferrer">
-                      AMP
-                    </a>
-                  </Td>
-                </Tr>
-              ))}
-            </Tbody>
-          </Table>
-        </TableContainer>
+      {apiState === ApiState.IDLE && modules && (
+        <Table hover>
+          <thead>
+            <tr>
+              <th>Name</th>
+              <th>Composers</th>
+              <th>Format</th>
+              <th>Size</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody>
+            {modules.map((module: Types.Module) => (
+              <tr key={module.id}>
+                <td>{module.name}</td>
+                <td>{module.composers.join(", ")}</td>
+                <td>{module.format}</td>
+                <td>{module.size}</td>
+                <td>
+                  {LIBOPENMPT_SUPPORTED_FORMATS.includes(module.format) && (
+                    <Button
+                      variant="primary"
+                      size="sm"
+                      onClick={() => {
+                        props.setSelectedModule(module);
+                      }}>
+                      Play
+                    </Button>
+                  )}
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </Table>
       )}
     </>
   );

@@ -1,19 +1,11 @@
-import {
-  Button,
-  Spinner,
-  Table,
-  TableContainer,
-  Tbody,
-  Td,
-  Th,
-  Thead,
-  Tr,
-} from "@chakra-ui/react";
 import { useEffect, useState } from "react";
 
+import Button from "react-bootstrap/Button";
+import Spinner from "react-bootstrap/Spinner";
+import Table from "react-bootstrap/Table";
+
 import { ApiState, getArtistModules } from "../api/api";
-import { Module } from "../types";
-import { Player } from "./Player";
+import { Types } from "../types";
 
 const LIBOPENMPT_SUPPORTED_FORMATS = [
   "DBM",
@@ -29,11 +21,13 @@ const LIBOPENMPT_SUPPORTED_FORMATS = [
   "XM",
 ];
 
-export function Artist(props: { params: { artistId: any } }) {
-  const artistId = props.params.artistId;
-  const [modules, setModules] = useState<Module[]>([]);
+export function Artist(props: {
+  artistId?: string;
+  setSelectedModule: any; // TODO: Proper typing
+}) {
+  const artistId = parseInt(props.artistId || "");
+  const [modules, setModules] = useState<Types.Module[]>([]);
   const [apiState, setApiState] = useState<ApiState>(ApiState.IDLE);
-  const [selectedModule, setSelectedModule] = useState<Module | undefined>();
 
   useEffect(() => {
     setApiState(ApiState.LOADING);
@@ -49,48 +43,43 @@ export function Artist(props: { params: { artistId: any } }) {
 
   return (
     <>
-      {apiState === ApiState.LOADING && <Spinner size="xl" thickness="4px" />}
+      {apiState === ApiState.LOADING && <Spinner />}
       {apiState === ApiState.ERROR && "Error when calling API"}
       {apiState === ApiState.IDLE && modules && (
-        <TableContainer>
-          <Table variant="simple" size="sm">
-            <Thead>
-              <Tr>
-                <Th>Name</Th>
-                <Th>Composers</Th>
-                <Th>Format</Th>
-                <Th>Size</Th>
-                <Th></Th>
-              </Tr>
-            </Thead>
-            <Tbody>
-              {modules.map((module: Module) => (
-                <Tr key={module.id}>
-                  <Td>{module.name}</Td>
-                  <Td>{module.composers.join(", ")}</Td>
-                  <Td>{module.format}</Td>
-                  <Td>{module.size}</Td>
-                  <Td>
-                    {LIBOPENMPT_SUPPORTED_FORMATS.includes(module.format) && (
-                      <Button
-                        colorScheme={
-                          selectedModule && module.id === selectedModule.id
-                            ? "green"
-                            : "gray"
-                        }
-                        size="sm"
-                        onClick={() => setSelectedModule(module)}>
-                        Play
-                      </Button>
-                    )}
-                  </Td>
-                </Tr>
-              ))}
-            </Tbody>
-          </Table>
-        </TableContainer>
+        <Table hover>
+          <thead>
+            <tr>
+              <th>Name</th>
+              <th>Composers</th>
+              <th>Format</th>
+              <th>Size</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody>
+            {modules.map((module: Types.Module) => (
+              <tr key={module.id}>
+                <td>{module.name}</td>
+                <td>{module.composers.join(", ")}</td>
+                <td>{module.format}</td>
+                <td>{module.size}</td>
+                <td>
+                  {LIBOPENMPT_SUPPORTED_FORMATS.includes(module.format) && (
+                    <Button
+                      variant="primary"
+                      size="sm"
+                      onClick={() => {
+                        props.setSelectedModule(module);
+                      }}>
+                      Play
+                    </Button>
+                  )}
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </Table>
       )}
-      <Player module={selectedModule} />
     </>
   );
 }
