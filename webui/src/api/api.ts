@@ -8,8 +8,8 @@ export enum ApiState {
 
 export const API_HOST =
   window.location.hostname === "localhost"
-    ? "http://localhost:4000/local"
-    : "TODO:";
+    ? "http://localhost:4000/local/api"
+    : "https://d399hvxgs7b3lz.cloudfront.net/api";
 
 const getFromAPI = async (path: string, query?: any): Promise<object> => {
   const url = new URL(`${API_HOST}${path}`);
