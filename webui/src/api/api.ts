@@ -6,10 +6,12 @@ export enum ApiState {
   ERROR,
 }
 
+console.log(window.location);
+
 export const API_HOST =
   window.location.hostname === "localhost"
-    ? "http://localhost:4000/local/api"
-    : "https://d399hvxgs7b3lz.cloudfront.net/api";
+    ? `${window.location.origin}/local/api`
+    : `${window.location.origin}/api`;
 
 const getFromAPI = async (path: string, query?: any): Promise<object> => {
   const url = new URL(`${API_HOST}${path}`);
