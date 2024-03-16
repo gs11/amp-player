@@ -100,7 +100,10 @@ resources:
                     ],
                   ]
             - Id: ${param:apiOriginName}-${self:provider.stage}
-              DomainName: !Select [2, !Split ["/", "${param:apiLambdaFunctionUrl}"]] # Removes https:// and trailing /
+              DomainName: !Select [
+                  2,
+                  !Split ["/", "${param:apiLambdaFunctionUrl}"],
+                ] # Removes https:// and trailing /
               CustomOriginConfig:
                 HTTPSPort: 443
                 OriginProtocolPolicy: https-only
@@ -142,3 +145,19 @@ resources:
                 Headers:
                   - Host
               ViewerProtocolPolicy: redirect-to-https
+          Aliases:
+            - amp.gsgs.se
+          ViewerCertificate:
+            AcmCertificateArn: arn:aws:acm:us-east-1:260624633595:certificate/e1dd851a-823b-416e-9a62-7fe22e02189e
+            MinimumProtocolVersion: TLSv1.2_2021
+            SslSupportMethod: sni-only
+
+    DnsRecord:
+      Type: AWS::Route53::RecordSet
+      Properties:
+        HostedZoneId: Z1EFMZRDFDG9Q3
+        Name: amp.gsgs.se
+        ResourceRecords:
+          - !GetAtt CloudFrontDistribution.DomainName
+        TTL: 3600
+        Type: CNAME
