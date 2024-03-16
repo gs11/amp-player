@@ -1,12 +1,15 @@
 from functools import lru_cache
 from typing import List, Optional
+import cloudscraper
 
-import requests
 import bs4
 
 from .models import Artist, Module
 
 BASE_URL = "https://amp.dascene.net"
+
+
+scraper = cloudscraper.create_scraper(browser={"custom": "ScraperBot/1.0"})
 
 
 class ArtistNotFoundException(Exception):
@@ -55,11 +58,10 @@ def _parse_module(row: bs4.element.Tag, handle: str) -> Optional[Module]:
 @lru_cache()
 def search_artists(query: str) -> List[Artist]:
     post_data = {"search": query, "request": "handle", "Submit": "Search"}
-
-    response = requests.post(url=f"{BASE_URL}/newresult.php", data=post_data)
+    response = scraper.post(f"{BASE_URL}/newresult.php", data=post_data)
     response.raise_for_status()
 
-    soup = bs4.BeautifulSoup(response.text, "html.parser")
+    soup = bs4.BeautifulSoup(response.content, "html.parser")
     div_result = soup.find("div", id="result")
     div_block = div_result.find("div", class_="block")  # type: ignore
     table = div_block.find("table", recursive=False)  # type: ignore
@@ -72,7 +74,7 @@ def search_artists(query: str) -> List[Artist]:
 
 @lru_cache()
 def list_modules(artist_id: int) -> List[Module]:
-    response = requests.get(url=f"{BASE_URL}/detail.php?detail=modules&view={artist_id}")
+    response = scraper.get(f"{BASE_URL}/detail.php?detail=modules&view={artist_id}")
     response.raise_for_status()
 
     soup = bs4.BeautifulSoup(response.text, "html.parser")
@@ -87,6 +89,6 @@ def list_modules(artist_id: int) -> List[Module]:
 
 
 def get_module(module_id: int) -> bytes:
-    response = requests.get(f"{BASE_URL}/downmod.php?index={module_id}")
+    response = scraper.get(f"{BASE_URL}/downmod.php?index={module_id}")
     response.raise_for_status()
     return response.content
