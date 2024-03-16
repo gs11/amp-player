@@ -1,0 +1,83 @@
+service: amp-player-webui
+
+frameworkVersion: "3"
+
+provider:
+  name: aws
+  runtime: nodejs18.x
+  stage: ${opt:stage}
+  region: eu-north-1
+  versionFunctions: false
+
+plugins:
+  - serverless-s3-sync
+
+custom:
+  hostname:
+    dev: amp-player-dev.gsgs.se
+    prod: amp-player.gsgs.se
+  s3Sync:
+    - bucketName: ${self:service}-${self:provider.stage}
+      localDir: build
+      defaultContentType: text/html
+      # WARN!: s3 does not sync metadata changes for files that has not changed.
+      params:
+        - "**/*.html":
+            CacheControl: "no-cache"
+
+resources:
+  Resources:
+    StaticSite:
+      Type: AWS::S3::Bucket
+      Properties:
+        BucketName: ${self:service}-${self:provider.stage}
+        WebsiteConfiguration:
+          IndexDocument: index.html
+          ErrorDocument: index.html
+
+    StaticSitePolicy:
+      Type: "AWS::S3::BucketPolicy"
+      DependsOn: StaticSite
+      Properties:
+        Bucket: !Ref StaticSite
+        PolicyDocument:
+          Statement:
+          - Action: "s3:Get*"
+            Effect: Allow
+            Resource: "arn:aws:s3:::${self:service}-${self:provider.stage}/*"
+            Principal:
+              CanonicalUser: !GetAtt CloudFrontOriginAccessIdentity.S3CanonicalUserId
+
+    CloudFrontOriginAccessIdentity:
+      Type: AWS::CloudFront::CloudFrontOriginAccessIdentity
+      Properties:
+        CloudFrontOriginAccessIdentityConfig:
+          Comment: ${self:service}-${self:provider.stage}
+
+    CloudFrontDistribution:
+      Type: AWS::CloudFront::Distribution
+      Properties:
+        DistributionConfig:
+          Origins:
+            - Id: ${self:service}-${self:provider.stage}
+              DomainName: ${self:service}-${self:provider.stage}.s3-${self:provider.region}.amazonaws.com
+              S3OriginConfig:
+                OriginAccessIdentity: !Join ["", ["origin-access-identity/cloudfront/", !Ref CloudFrontOriginAccessIdentity]]
+          Enabled: true
+          HttpVersion: http2
+          DefaultRootObject: index.html
+          CustomErrorResponses:
+            - ErrorCode: 404
+              ResponseCode: 200
+              ResponsePagePath: /index.html
+          DefaultCacheBehavior:
+            AllowedMethods:
+              - GET
+              - HEAD
+            TargetOriginId: ${self:service}-${self:provider.stage}
+            ForwardedValues:
+              QueryString: false
+              Cookies:
+                Forward: none
+            ViewerProtocolPolicy: redirect-to-https
+          PriceClass: PriceClass_100

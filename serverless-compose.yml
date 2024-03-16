@@ -1,0 +1,6 @@
+services: 
+  api:
+    path: api
+  webui:
+    path: webui
+ 
