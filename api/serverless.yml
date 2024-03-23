@@ -4,7 +4,7 @@ frameworkVersion: "3"
 
 provider:
   name: aws
-  runtime: python3.9 # Latest supported
+  runtime: python3.11 # Latest supported
   stage: ${opt:stage}
   region: eu-north-1
   versionFunctions: false
@@ -23,10 +23,10 @@ package:
     - "!Makefile"
     - "!node_modules/**"
     - "!package*.json"
-    - "!poetry.lock"
     - "!pyproject.toml"
     - "!src/__pycache__/**"
     - "!requirements.txt"
+    - "!requirements-dev.txt"
 
 functions:
   handler:
