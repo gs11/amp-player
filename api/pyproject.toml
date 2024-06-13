@@ -8,7 +8,7 @@ authors = ["gs11 <gustav.sinder@gmail.com>"]
 python = "^3.11"
 beautifulsoup4 = "^4.12.3"
 cloudscraper = "^1.2.71"
-fastapi = "^0.110.0"
+fastapi = "^0.111.0"
 mangum = "^0.17.0"
 
 [tool.poetry.group.dev.dependencies]

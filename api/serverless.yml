@@ -8,6 +8,7 @@ provider:
   stage: ${opt:stage}
   region: eu-north-1
   versionFunctions: false
+  logRetentionInDays: 1
 
 plugins:
   - serverless-offline
